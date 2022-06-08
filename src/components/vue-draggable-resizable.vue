@@ -870,7 +870,7 @@ export default {
       const transform = [
         `translate(${this.left}px, ${this.top}px)`
       ]
-      if (this.rotatable) {
+      if (this.rotationAmount) {
         transform.push(`rotate(${this.rotationAmount}deg)`)
       }
       return {
