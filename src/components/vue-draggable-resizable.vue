@@ -530,6 +530,7 @@ export default {
 
       this.bounds = this.calcResizeLimits()
 
+      addEvent(document.documentElement, eventsFor.move, this.handleRotate)
       addEvent(document.documentElement, eventsFor.stop, this.handleUp)
     },
     handleRotate (e) {
@@ -863,6 +864,8 @@ export default {
       }
 
       removeEvent(document.documentElement, eventsFor.move, this.handleResize)
+      removeEvent(document.documentElement, eventsFor.move, this.handleRotate)
+      removeEvent(document.documentElement, eventsFor.move, this.move)
     }
   },
   computed: {
