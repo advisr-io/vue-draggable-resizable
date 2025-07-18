@@ -2,6 +2,15 @@
 
 All notable changes to `vue-draggable-resizable` will be documented in this file
 
+## 3.0.0 - 2024-01-27
+- Migrates to Vue 3
+- Updates all packages
+- Adds Vitest instead of Mocha and Karma for testing
+- Adds Vite instead of Webpack
+- Adds Cypress to component-test the package in real browsers
+- Fix `drag-stop` and `resize-stop` events
+- And minor changes
+
 ## 2.3.0 - 2020-12-17
 - `scale` prop supports one or two values
 - component with `active` prop to `true` emits `activated`

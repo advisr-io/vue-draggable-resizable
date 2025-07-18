@@ -333,7 +333,7 @@ export default {
 
     addEvent(window, 'resize', this.checkParentSize)
   },
-  beforeDestroy: function () {
+  beforeUnmount: function () {
     removeEvent(document.documentElement, 'mousedown', this.deselect)
     removeEvent(document.documentElement, 'touchstart', this.handleUp)
     removeEvent(document.documentElement, 'mousemove', this.move)
@@ -392,7 +392,7 @@ export default {
       this.elementDown(e)
     },
     elementDown (e) {
-      if (e instanceof MouseEvent && e.which !== 1) {
+      if (e instanceof MouseEvent && e.button !== 0) {
         return
       }
 
@@ -716,7 +716,6 @@ export default {
       let bottom = this.bottom
 
       const mouseClickPosition = this.mouseClickPosition
-      const lockAspectRatio = this.lockAspectRatio
       const aspectFactor = this.aspectFactor
 
       const tmpDeltaX = mouseClickPosition.mouseX - (e.touches ? e.touches[0].pageX : e.pageX)
@@ -797,7 +796,7 @@ export default {
       // should calculate with scale 1.
       const [newWidth, _] = snapToGrid(this.grid, val, 0, 1)
 
-      let right = restrictToBounds(
+      const right = restrictToBounds(
         (this.parentWidth - newWidth - this.left),
         this.bounds.minRight,
         this.bounds.maxRight
@@ -820,7 +819,7 @@ export default {
       // should calculate with scale 1.
       const [_, newHeight] = snapToGrid(this.grid, 0, val, 1)
 
-      let bottom = restrictToBounds(
+      const bottom = restrictToBounds(
         (this.parentHeight - newHeight - this.top),
         this.bounds.minBottom,
         this.bounds.maxBottom
@@ -850,17 +849,17 @@ export default {
 
       if (this.resizing) {
         this.resizing = false
-        this.$emit('resizestop', this.left, this.top, this.width, this.height, e)
+        this.$emit('resizeStop', this.left, this.top, this.width, this.height, e)
       }
 
       if (this.dragging) {
         this.dragging = false
-        this.$emit('dragstop', this.left, this.top, e)
+        this.$emit('dragStop', this.left, this.top, e)
       }
 
       if (this.rotating) {
         this.rotating = false
-        this.$emit('rotatestop', this.rotationAmount, e)
+        this.$emit('rotateStop', this.rotationAmount, e)
       }
 
       removeEvent(document.documentElement, eventsFor.move, this.handleResize)
