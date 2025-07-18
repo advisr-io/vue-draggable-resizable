@@ -1,11 +1,11 @@
 <p align="center"><img src="https://rawgit.com/mauricius/vue-draggable-resizable/v1/docs/resources/logo.png" alt="logo"></p>
-<h1 align="center">VueDraggableResizable 2</h1>
+<h1 align="center">VueDraggableResizable 3</h1>
 
 [![Latest Version on NPM](https://img.shields.io/npm/v/vue-draggable-resizable.svg?style=flat-square)](https://npmjs.com/package/vue-draggable-resizable)
 [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md)
 [![npm](https://img.shields.io/npm/dt/vue-draggable-resizable.svg?style=flat-square)](https://www.npmjs.com/package/vue-draggable-resizable)
 
-> Vue2 Component for draggable and resizable elements.
+> Vue Component for draggable and resizable elements.
 
 If you are looking for the version 1 of the component, it is available on the [v1 branch](https://github.com/mauricius/vue-draggable-resizable/tree/v1).
 
@@ -41,8 +41,8 @@ Alternatively you can run the playground on your own computer:
 
 * Clone this repository
 * `npm install`
-* `npm run storybook`
-* Visit [http://localhost:9001/](http://localhost:9001/)
+* `npm run story:dev`
+* Visit [http://localhost:6006/](http://localhost:6006/)
 
 ---
 
@@ -53,56 +53,38 @@ $ npm install --save vue-draggable-resizable
 ```
 
 
-Register the component
+Register the component globally
 
 ```js
-import Vue from 'vue'
+// main.js
+import { createApp } from 'vue'
 import VueDraggableResizable from 'vue-draggable-resizable'
+import App from './App.vue'
 
-// optionally import default styles
-import 'vue-draggable-resizable/dist/VueDraggableResizable.css'
-
-Vue.component('vue-draggable-resizable', VueDraggableResizable)
+createApp(App)
+  .component("vue-draggable-resizable", VueDraggableResizable)
+  .mount('#app')
 ```
 
 You may now use the component in your markup
 
 ```vue
+// App.vue
 <template>
   <div style="height: 500px; width: 500px; border: 1px solid red; position: relative;">
-    <vue-draggable-resizable :w="100" :h="100" @dragging="onDrag" @resizing="onResize" :parent="true">
-      <p>Hello! I'm a flexible component. You can drag me around and you can resize me.<br>
-      X: {{ x }} / Y: {{ y }} - Width: {{ width }} / Height: {{ height }}</p>
+    <vue-draggable-resizable :w="100" :h="100" :parent="true">
+      <p>Hello! I'm a flexible component. You can drag me around and you can resize me.</p>
     </vue-draggable-resizable>
   </div>
 </template>
+```
 
-<script>
-import VueDraggableResizable from 'vue-draggable-resizable'
+The component itself does not include any CSS. You'll need to include it separately in your `App.vue`:
 
-export default {
-  data: function () {
-    return {
-      width: 0,
-      height: 0,
-      x: 0,
-      y: 0
-    }
-  },
-  methods: {
-    onResize: function (x, y, width, height) {
-      this.x = x
-      this.y = y
-      this.width = width
-      this.height = height
-    },
-    onDrag: function (x, y) {
-      this.x = x
-      this.y = y
-    }
-  }
-}
-</script>
+```vue
+<style>
+@import "vue-draggable-resizable/style.css";
+</style>
 ```
 
 ### Props
@@ -369,7 +351,7 @@ Type: `Number|String`<br>
 Required: `false`<br>
 Default: `auto`
 
-Define the zIndex of the element.
+Define the z-index of the element.
 
 ```html
 <vue-draggable-resizable :z="999">
@@ -581,7 +563,7 @@ Parameters:
 Called whenever the component stops getting resized.
 
 ```html
-<vue-draggable-resizable @resizestop="onResizstop">
+<vue-draggable-resizable @resizestop="onResizestop">
 ```
 
 #### dragging
@@ -614,7 +596,7 @@ Called whenever the component stops getting dragged.
 
 You can style the component using appropriate class names passed as props to the component. Moreover you can replace the default styles for the handles, provided in the source file `vue-draggable-resizable.css`, but you should take care to define position and size for them. The default classes for handles are `handle` and `handle-tl`, `handle-br` and so on.
 
-The component also provides [named slots](https://vuejs.org/v2/guide/components-slots.html#Named-Slots) for each handle, so you can use your markup inside each one.
+The component also provides [named slots](https://vuejs.org/guide/components/slots.html#named-slots) for each handle, so you can use your markup inside each one.
 
 ## Thanks
 
@@ -630,19 +612,19 @@ Any contribution to the code or any part of the documentation and any idea and/o
 
 ``` bash
 # serve with hot reload at localhost:8080
-npm run serve
+npm run dev
 
 # distribution build
 npm run build
 
-# build the storybook docs into gh-pages
-npm run gh-pages:build
+# build the histoire docs
+npm run story:build
 
 # run tests
-npm run tests
+npm run test
 
-# run storybook at localhost:9001
-npm run storybook
+# run histoire at localhost:6006
+npm run story:dev
 ```
 
 ## License
