@@ -1,5 +1,6 @@
 <template>
   <div
+    ref="draggableEl"
     :style="style"
     :class="[{
       [classNameActive]: enabled,
@@ -22,6 +23,27 @@
       <slot :name="handle"></slot>
     </div>
     <slot></slot>
+    <div
+      v-if="enabled && rotatable"
+      class="handle-rotate-stick"
+    />
+    <div
+      v-if="enabled && rotatable"
+      :class="[classNameHandle + '-rotate']"
+      :style="rotateHandleStyles"
+      @mousedown.stop.prevent="handleRotateDown($event)"
+      @touchstart.stop.prevent="handleRotateTouchDown($event)"
+      @mouseover="rotateHandleHover = true"
+      @mouseout="rotateHandleHover = false"
+    >
+      <div
+        v-if="shouldShowRotateTooltip"
+        class="handle-rotate-tooltip"
+      >
+        {{ rotateTooltipContent }}
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -114,6 +136,10 @@ export default {
       type: Boolean,
       default: true
     },
+    rotatable: {
+      type: Boolean,
+      default: false
+    },
     lockAspectRatio: {
       type: Boolean,
       default: false
@@ -172,6 +198,10 @@ export default {
       type: [String, Number],
       default: 'auto',
       validator: (val) => (typeof val === 'string' ? val === 'auto' : val >= 0)
+    },
+    rotation: {
+      type: Number,
+      default: 0
     },
     handles: {
       type: Array,
@@ -238,6 +268,7 @@ export default {
       top: this.y,
       right: null,
       bottom: null,
+      rotationAmount: this.rotation,
 
       width: null,
       height: null,
@@ -250,13 +281,18 @@ export default {
       parentWidth: null,
       parentHeight: null,
 
+      mouseClickPosition: { mouseX: 0, mouseY: 0, x: 0, y: 0, w: 0, h: 0 },
+
       handle: null,
       enabled: this.active,
       resizing: false,
       dragging: false,
+      rotating: false,
       dragEnable: false,
       resizeEnable: false,
-      zIndex: this.z
+      rotateEnable: false,
+      zIndex: this.z,
+      rotateHandleHover: false
     }
   },
 
@@ -379,9 +415,10 @@ export default {
         if (!this.enabled) {
           this.enabled = true
 
-          this.$emit('activated')
+          this.$emit('activated', e)
           this.$emit('update:active', true)
         }
+        this.$emit('mousedown', e)
 
         if (this.draggable) {
           this.dragEnable = true
@@ -469,6 +506,50 @@ export default {
 
       addEvent(document.documentElement, eventsFor.move, this.handleResize)
       addEvent(document.documentElement, eventsFor.stop, this.handleUp)
+    },
+    handleRotateTouchDown (e) {
+      eventsFor = events.touch
+
+      this.handleRotateDown(e)
+    },
+    handleRotateDown (e) {
+      if (e instanceof MouseEvent && e.which !== 1) {
+        return
+      }
+
+      if (e.stopPropagation) e.stopPropagation()
+
+      this.rotateEnable = true
+
+      this.mouseClickPosition.mouseX = e.touches ? e.touches[0].pageX : e.pageX
+      this.mouseClickPosition.mouseY = e.touches ? e.touches[0].pageY : e.pageY
+      this.mouseClickPosition.left = this.left
+      this.mouseClickPosition.right = this.right
+      this.mouseClickPosition.top = this.top
+      this.mouseClickPosition.bottom = this.bottom
+
+      this.bounds = this.calcResizeLimits()
+
+      addEvent(document.documentElement, eventsFor.move, this.handleRotate)
+      addEvent(document.documentElement, eventsFor.stop, this.handleUp)
+    },
+    handleRotate (e) {
+      const mousePosition = {
+        x: (e.touches ? e.touches[0].pageX : e.pageX),
+        y: (e.touches ? e.touches[0].pageY : e.pageY)
+      }
+
+      const elementBoundingBox = this.$refs.draggableEl.getBoundingClientRect()
+      const elementCenter = {
+        x: Math.round(elementBoundingBox.left + (elementBoundingBox.width / 2)),
+        y: Math.round(elementBoundingBox.top + (elementBoundingBox.height / 2))
+      }
+
+      const vector = { x: mousePosition.x - elementCenter.x, y: mousePosition.y - elementCenter.y }
+      this.rotationAmount = Math.round(Math.atan2(vector.y, vector.x) * 180 / Math.PI) + 90
+
+      this.$emit('rotating', this.rotationAmount)
+      this.rotating = true
     },
     calcResizeLimits () {
       let minW = this.minW
@@ -577,6 +658,8 @@ export default {
         this.handleResize(e)
       } else if (this.dragEnable) {
         this.handleDrag(e)
+      } else if (this.rotateEnable) {
+        this.handleRotate(e)
       }
     },
     handleDrag (e) {
@@ -605,7 +688,7 @@ export default {
       this.right = right
       this.bottom = bottom
 
-      this.$emit('dragging', this.left, this.top)
+      this.$emit('dragging', this.left, this.top, e)
       this.dragging = true
     },
     moveHorizontally (val) {
@@ -706,7 +789,7 @@ export default {
       this.width = width
       this.height = height
 
-      this.$emit('resizing', this.left, this.top, this.width, this.height)
+      this.$emit('resizing', this.left, this.top, this.width, this.height, e)
       this.resizing = true
     },
     changeWidth (val) {
@@ -762,24 +845,38 @@ export default {
 
       this.dragEnable = false
       this.resizeEnable = false
+      this.rotateEnable = false
 
       if (this.resizing) {
         this.resizing = false
-        this.$emit('resizeStop', this.left, this.top, this.width, this.height)
+        this.$emit('resizeStop', this.left, this.top, this.width, this.height, e)
       }
 
       if (this.dragging) {
         this.dragging = false
-        this.$emit('dragStop', this.left, this.top)
+        this.$emit('dragStop', this.left, this.top, e)
+      }
+
+      if (this.rotating) {
+        this.rotating = false
+        this.$emit('rotateStop', this.rotationAmount, e)
       }
 
       removeEvent(document.documentElement, eventsFor.move, this.handleResize)
+      removeEvent(document.documentElement, eventsFor.move, this.handleRotate)
+      removeEvent(document.documentElement, eventsFor.move, this.move)
     }
   },
   computed: {
     style () {
+      const transform = [
+        `translate(${this.left}px, ${this.top}px)`
+      ]
+      if (this.rotationAmount) {
+        transform.push(`rotate(${this.rotationAmount}deg)`)
+      }
       return {
-        transform: `translate(${this.left}px, ${this.top}px)`,
+        transform: transform.join(' '),
         width: this.computedWidth,
         height: this.computedHeight,
         zIndex: this.zIndex,
@@ -829,6 +926,23 @@ export default {
     },
     isCornerHandle () {
       return (Boolean(this.handle) && ['tl', 'tr', 'br', 'bl'].includes(this.handle))
+    },
+    rotateHandleStyles () {
+      if (!this.rotatable) return {}
+
+      const transform = [
+        `rotate(${0 - this.rotationAmount}deg)`
+      ]
+      return {
+        transform: transform.join(' ')
+      }
+    },
+    shouldShowRotateTooltip () {
+      return this.rotateHandleHover || this.rotating
+    },
+    rotateTooltipContent () {
+      if (this.rotating) return `Rotate ${this.rotationAmount}°`
+      return 'Rotate'
     }
   },
 

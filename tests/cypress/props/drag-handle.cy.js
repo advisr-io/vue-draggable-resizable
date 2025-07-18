@@ -54,7 +54,8 @@ describe('`drag-handle` prop', () => {
         x: 0,
         y: 0,
         w: 100,
-        h: 100
+        h: 100,
+        handles: []
       },
       slots: {
         default: '<div class="drag-handle">Drag only me</div>'
